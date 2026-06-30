@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Cosmos — Explore our Solar System and defend Earth from asteroids! Interactive planet models, moons, orbital mechanics, and an Asteroid Defense game.">
+  <title>Cosmos — Solar System Explorer & Asteroid Defense</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <canvas id="universe"></canvas>
+
+  <!-- ── Top Bar ────────────────────────────────────────── -->
+  <header id="top-bar">
+    <div class="logo">
+      <span class="logo-icon">☀</span>
+      <h1>Cosmos</h1>
+      <span class="logo-tag">Solar System</span>
+    </div>
+    <nav id="nav-controls">
+      <div class="speed-control">
+        <label for="speed-slider">Speed</label>
+        <input type="range" id="speed-slider" min="0" max="500" value="10" step="1">
+        <span id="speed-value" class="ctrl-value">10 d/s</span>
+      </div>
+      <div class="nav-sep"></div>
+      <button class="nav-btn active" id="btn-orbits" title="Toggle orbit lines">
+        <span class="btn-icon">◯</span><span class="btn-text">Orbits</span>
+      </button>
+      <button class="nav-btn active" id="btn-labels" title="Toggle planet labels">
+        <span class="btn-icon">Aa</span><span class="btn-text">Labels</span>
+      </button>
+      <button class="nav-btn active" id="btn-moons-toggle" title="Toggle moons">
+        <span class="btn-icon">●</span><span class="btn-text">Moons</span>
+      </button>
+      <div class="nav-sep"></div>
+      <button class="nav-btn" id="btn-pause">
+        <span class="btn-icon" id="pause-icon">⏸</span><span class="btn-text" id="pause-text">Pause</span>
+      </button>
+      <button class="nav-btn" id="btn-reset-view" title="Reset camera view">
+        <span class="btn-icon">⌂</span><span class="btn-text">Reset</span>
+      </button>
+      <button class="nav-btn" id="btn-game" title="Asteroid Defense game">
+        <span class="btn-icon">🛡️</span><span class="btn-text">Defend</span>
+      </button>
+      <button class="nav-btn nav-btn--accent" id="btn-info">
+        <span class="btn-icon">ℹ</span><span class="btn-text">Info</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ── Zoom Controls ─────────────────────────────────── -->
+  <div id="zoom-controls">
+    <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+    <span id="zoom-level">1.0×</span>
+    <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+  </div>
+
+  <!-- ── Game HUD ──────────────────────────────────────── -->
+  <div id="game-hud">
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span class="hud-val score" id="hud-score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Lives</span>
+      <span class="hud-val lives" id="hud-lives">5</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Wave</span>
+      <span class="hud-val wave" id="hud-wave">1</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Shield</span>
+      <span class="hud-val" id="hud-shield" style="color:#00d4ff">Ready</span>
+    </div>
+  </div>
+
+  <!-- ── Game Over Screen ──────────────────────────────── -->
+  <div id="game-over">
+    <div class="game-over-content">
+      <h2 class="game-over-title">Game Over</h2>
+      <div class="game-over-score" id="go-score">0</div>
+      <div class="game-over-stats">
+        <div class="go-stat"><span class="go-stat-label">Waves Survived</span><span class="go-stat-val" id="go-waves">0</span></div>
+        <div class="go-stat"><span class="go-stat-label">Asteroids Destroyed</span><span class="go-stat-val" id="go-destroyed">0</span></div>
+        <div class="go-stat"><span class="go-stat-label">Accuracy</span><span class="go-stat-val" id="go-accuracy">0%</span></div>
+      </div>
+      <div class="game-over-btns">
+        <button class="go-btn go-btn--primary" id="go-restart">Play Again</button>
+        <button class="go-btn" id="go-exit">Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Planet Info Card ──────────────────────────────── -->
+  <aside id="planet-card" class="planet-card">
+    <button class="card-close" id="card-close" aria-label="Close">&times;</button>
+    <div class="card-visual">
+      <canvas id="card-canvas" width="140" height="140"></canvas>
+    </div>
+    <h2 class="card-name" id="card-name"></h2>
+    <p class="card-tagline" id="card-tagline"></p>
+    <div class="card-stats" id="card-stats"></div>
+    <div class="card-moons-section" id="card-moons-section">
+      <h4>Major Moons</h4>
+      <div class="card-moon-list" id="card-moon-list"></div>
+    </div>
+    <p class="card-desc" id="card-desc"></p>
+  </aside>
+
+  <!-- ── Info Modal ────────────────────────────────────── -->
+  <div class="modal-overlay" id="info-modal">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-header">
+        <div class="modal-logo">☀</div>
+        <h2>Welcome to <span class="gradient-text">Cosmos</span></h2>
+        <p class="modal-subtitle">Solar System Explorer &amp; Asteroid Defense</p>
+      </div>
+      <div class="modal-body">
+        <section class="info-section">
+          <h3>🌍 Explore the Solar System</h3>
+          <p>Navigate through a beautifully rendered model of our Solar System — all eight planets
+            with realistic surface details, their major moons, a comet, the asteroid belt, shooting
+            stars, and stunning nebula backgrounds. Click any planet to discover real facts.</p>
+        </section>
+        <section class="info-section">
+          <h3>🛡️ Asteroid Defense Game</h3>
+          <p>Click the <strong>Defend</strong> button to activate the Asteroid Defense game mode!
+            Dangerous asteroids will start hurtling toward Earth. Click them to destroy them before
+            they hit — each impact costs a life. Survive waves of increasing difficulty, earn combo
+            bonuses, and use your shield power-up to clear the screen!</p>
+          <ul class="info-list">
+            <li><strong>Click asteroids</strong> to destroy them (bigger = more points)</li>
+            <li><strong>Combo bonus</strong> — destroy asteroids in quick succession for multipliers</li>
+            <li><strong>Shield</strong> — press <kbd>S</kbd> to activate (30-second cooldown)</li>
+            <li><strong>Waves</strong> — each wave spawns more & faster asteroids</li>
+            <li><strong>Lives</strong> — you start with 5. An asteroid hitting Earth costs one life</li>
+          </ul>
+        </section>
+        <section class="info-section">
+          <h3>🖱️ Navigation</h3>
+          <ul class="info-list">
+            <li><strong>Scroll wheel</strong> — Zoom in and out</li>
+            <li><strong>Click + drag</strong> on empty space — Pan the view</li>
+            <li><strong>Click a planet or the Sun</strong> — View detailed information</li>
+          </ul>
+        </section>
+        <section class="info-section">
+          <h3>⌨️ Keyboard Shortcuts</h3>
+          <div class="shortcuts-grid">
+            <div class="shortcut"><kbd>Space</kbd><span>Pause / Resume</span></div>
+            <div class="shortcut"><kbd>G</kbd><span>Toggle game mode</span></div>
+            <div class="shortcut"><kbd>S</kbd><span>Activate shield</span></div>
+            <div class="shortcut"><kbd>O</kbd><span>Toggle orbits</span></div>
+            <div class="shortcut"><kbd>L</kbd><span>Toggle labels</span></div>
+            <div class="shortcut"><kbd>M</kbd><span>Toggle moons</span></div>
+            <div class="shortcut"><kbd>R</kbd><span>Reset camera</span></div>
+            <div class="shortcut"><kbd>Esc</kbd><span>Close panels</span></div>
+            <div class="shortcut"><kbd>+</kbd><span>Zoom in</span></div>
+            <div class="shortcut"><kbd>−</kbd><span>Zoom out</span></div>
+          </div>
+        </section>
+        <section class="info-section">
+          <h3>🔭 The Solar System</h3>
+          <p>Our Solar System formed approximately <strong>4.6 billion years ago</strong> from the
+            gravitational collapse of a molecular cloud. It contains one star (the Sun),
+            eight planets, over 200 moons, and countless asteroids and comets.</p>
+        </section>
+        <section class="info-section">
+          <h3>💡 Tips</h3>
+          <ul class="info-list">
+            <li>Zoom in close to gas giants to see their moons orbiting.</li>
+            <li>Watch for the comet streaking through the system with its glowing tail!</li>
+            <li>In Defend mode, bigger asteroids give more points but are harder to hit.</li>
+            <li>Use the shield strategically — save it for when you're overwhelmed!</li>
+          </ul>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <p>Built with HTML Canvas, CSS &amp; JavaScript — No frameworks</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Status Bar ────────────────────────────────────── -->
+  <footer id="status-bar">
+    <div class="status-left">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Running</span>
+    </div>
+    <div class="status-center">
+      <span>Day <strong id="sim-day">0</strong></span>
+      <span class="status-sep">·</span>
+      <span>Year <strong id="sim-year">0</strong></span>
+    </div>
+    <div class="status-right">
+      <span>Zoom: <strong id="zoom-display">1.0×</strong></span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
